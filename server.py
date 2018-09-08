@@ -3,6 +3,7 @@ import SimpleHTTPServer
 import SocketServer
 
 import sys
+import os
 import subprocess
 import socket
 
@@ -10,6 +11,9 @@ import cgi
 import json
 import pprint
 import tempfile
+import shlex
+
+SOLC_PATH = os.environ.get('SOLC_PATH', '/usr/local/bin/solc')
 
 class MyServer(BaseHTTPServer.HTTPServer):
 
@@ -45,23 +49,24 @@ class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         # TODO: add error handling in case the target is missing from sources
         source_code = info['source']['sources'][sol_filename]['content']
 
-        #with open('/tmp/lol.txt','w') as f: pprint.pprint(info, f)
+        
         ast = info['data']['sources'][sol_filename]['legacyAST']
-        #open('/tmp/lol.json','w').write(json.dumps(ast))
+        
         result = ''
-        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix='.json') as f:
             f.write('== {} ==\n'.format(sol_filename))
             f.write(json.dumps(ast))
             f.flush()
-            result = subprocess.check_output(['python','./slither/slither.py', f.name, '--solc-ast', '--disable-solc-warnings', '--solc', '/usr/local/bin/solc' ])
-            print result
 
-            #f.seek()
+            path = shlex.split('python ./slither/slither.py {} --solc-ast --disable-solc-warnings --solc {} --print-summary'.format(f.name, SOLC_PATH))
+            p = subprocess.Popen(path, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            _, result = p.communicate()
+            p.wait()
+            
         #pprint.pprint(info['data']['sources'][sol_filename]['legacyAST'])
         #pprint.pprint(info['data']['contracts'][sol_filename])
         #print info['data']['contracts'][sol_filename].keys()
-        #pprint.pprint(info)
-        #print repr(source_code)
+        
         output = {'status': 1, 'output': result }
         output = json.dumps(output)
 

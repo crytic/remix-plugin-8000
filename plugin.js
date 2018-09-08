@@ -51,7 +51,6 @@ window.onload = function () {
         }
 
         document.querySelector('div#results').innerHTML = res['output'];
-
       });
 
      });
@@ -71,11 +70,12 @@ window.onload = function () {
         console.log(res);
         if(res['status'] == 0) {
           console.log("error from slither");
-          document.querySelector('div#results').innerHTML = 'Error running slither: ' + res['output'];
+          document.querySelector('div#results').innerHTML = "Error running slither: " + res['output'];
           return;
         }
-
-        document.querySelector('div#results').innerHTML = res['output'];
+        else {
+          document.querySelector('div#results').innerHTML = res['output'];
+        }
 
       });
 
