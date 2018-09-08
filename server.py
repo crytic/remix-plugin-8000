@@ -38,7 +38,7 @@ class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         info = info[0]
 
         # get the current target:
-        
+
         #print info.keys() # source and data are keys
         sol_filename = info['source']['target']
 
@@ -48,9 +48,12 @@ class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         #with open('/tmp/lol.txt','w') as f: pprint.pprint(info, f)
         ast = info['data']['sources'][sol_filename]['legacyAST']
         #open('/tmp/lol.json','w').write(json.dumps(ast))
-        with tempfile.NamedTemporaryFile() as f:
+        result = ''
+        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
+            f.write('== {} ==\n'.format(sol_filename))
             f.write(json.dumps(ast))
-            result = subprocess.check_output(['python','./slither/slither.py', f.name, '--solc-ast', '--disable-solc-warnings', '--solc', 'work/eth/solidity-source/0.4.24/solidity_0.4.24/build/solc/solc' ])
+            f.flush()
+            result = subprocess.check_output(['python','./slither/slither.py', f.name, '--solc-ast', '--disable-solc-warnings', '--solc', '/usr/local/bin/solc' ])
             print result
 
             #f.seek()
@@ -59,14 +62,14 @@ class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         #print info['data']['contracts'][sol_filename].keys()
         #pprint.pprint(info)
         #print repr(source_code)
-        output = {'status': 1, 'output': '' }
+        output = {'status': 1, 'output': result }
         output = json.dumps(output)
 
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
         self.send_header('Content-Length', str(len(output)))
         self.end_headers()
-        
+
 
         self.wfile.write(output)
 
