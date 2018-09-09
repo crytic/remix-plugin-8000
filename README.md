@@ -17,7 +17,8 @@ This tool was created during the ETHBerlin 2018 Hackathon.
 }
 ```
 * Click the Load button and you should see remix-plugin-8000 button appear
-* Click the remix-plugin-8000 button to load the plugin into a small window                               i
+* Click the remix-plugin-8000 button to load the plugin into a small window
+* Now click on the button you would like to perform the analysis
 
 ## Setup
 If you would like to run the analysis software on your own computer instead of the public one, follow the directions below
