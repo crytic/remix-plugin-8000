@@ -36,6 +36,48 @@ class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         # do GETs as normal
         SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
 
+    def do_mythril(self, buf):
+        info = json.loads(buf)
+
+        # we get an array so get just first element
+        info = info[0]
+
+        # get the current target
+        sol_filename = info['source']['target']
+
+        # TODO: add error handling in case the target is missing from sources
+        source_code = info['source']['sources'][sol_filename]['content']
+        
+        ast = info['data']['sources'][sol_filename]['legacyAST']
+        
+        result = ''
+        with tempfile.NamedTemporaryFile(suffix='.json') as output_fp:
+            with tempfile.NamedTemporaryFile(suffix='.sol') as f:
+                f.write(source_code)
+                f.flush()
+
+                path = shlex.split('myth -x {}'.format(f.name))
+                p = subprocess.Popen(path, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                (cmd_out, cmd_err) =  p.communicate()
+                print cmd_out, cmd_err
+                p.wait()
+                result = cmd_out
+
+                #result = output_fp.read()   
+        
+        #pprint.pprint(info['data']['contracts'][sol_filename])
+        #print info['data']['contracts'][sol_filename].keys()
+        
+        output = {'status': 1, 'output': result }
+        output = json.dumps(output)
+
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', str(len(output)))
+        self.end_headers()
+
+        self.wfile.write(output)
+        
     def do_slither(self, buf):
         info = json.loads(buf)
 
@@ -91,8 +133,8 @@ class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
 
     def do_POST(self):
-        if self.path not in ('/slither', '/manticore', '/solium'):
-            SimpleHTTPServer.SimpleHTTPRequestHandler.do_POST(self)
+        if self.path not in ('/slither', '/manticore', '/solium', '/mythril'):
+            SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
             return
 
         buf = ''
@@ -104,6 +146,8 @@ class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             self.do_slither(buf)
         elif self.path == '/manticore':
             self.do_manticore(buf)
+        elif self.path == '/mythril':
+            self.do_mythril(buf)
 
 PORT = 8000
 
